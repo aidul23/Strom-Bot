@@ -7,12 +7,24 @@ const GUILD_ID = "469189848935432213";
 
 const commands = [
   {
-    name: "ping",
-    description: "Replies with Pong!",
+    name: "funfact",
+    description: "Get a random fun weather fact!"
   },
   {
     name: "forecast",
     description: "Get a 3-day weather forecast for a specific city.",
+    options: [
+      {
+        name: "city",
+        type: 3,
+        description: "Enter the city name",
+        required: true,
+      },
+    ],
+  },
+  {
+    name: "weather",
+    description: "Get details weather forecast for a specific city.",
     options: [
       {
         name: "city",

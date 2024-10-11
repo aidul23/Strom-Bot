@@ -1,6 +1,7 @@
-import { Client, GatewayIntentBits, EmbedBuilder } from "discord.js";
 import axios from "axios";
+import { Client, EmbedBuilder, GatewayIntentBits } from "discord.js";
 import dotenv from "dotenv";
+import funFacts from "./data/funFacts.js";
 dotenv.config();
 
 const client = new Client({
@@ -11,32 +12,32 @@ const client = new Client({
   ],
 });
 
-const prefix = "!";
+// const prefix = "!";
 
-client.on("messageCreate", async (message) => {
-  if (!message.content.startsWith(prefix) || message.author.bot) return;
+// client.on("messageCreate", async (message) => {
+//   if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-  const args = message.content.slice(prefix.length).trim().split(" ");
-  console.log("args: ", args);
+//   const args = message.content.slice(prefix.length).trim().split(" ");
+//   console.log("args: ", args);
 
-  const command = args.shift().toLowerCase();
-  console.log("command: ", command);
+//   const command = args.shift().toLowerCase();
+//   console.log("command: ", command);
 
-  if (command === "weather") {
-    const city = args.join(" ");
-    if (!city) {
-      return message.reply("you forgot the city name! 🫤");
-    }
-    const weatherInfo = await getWeather(city);
-    if (weatherInfo) {
-      message.channel.send(weatherInfo);
-    } else {
-      message.channel.send(
-        "Oops! Looks like the weather took a break today 🌥️. Can't fetch the forecast right now—try again later ⚠️!"
-      );
-    }
-  }
-});
+//   if (command === "weather") {
+//     const city = args.join(" ");
+//     if (!city) {
+//       return message.reply("you forgot the city name! 🫤");
+//     }
+//     const weatherInfo = await getWeather(city);
+//     if (weatherInfo) {
+//       message.channel.send(weatherInfo);
+//     } else {
+//       message.channel.send(
+//         "Oops! Looks like the weather took a break today 🌥️. Can't fetch the forecast right now—try again later ⚠️!"
+//       );
+//     }
+//   }
+// });
 
 async function getWeather(city) {
   try {
@@ -93,35 +94,46 @@ async function getForecastByCity(city) {
     throw new Error("City not found");
   }
 
-  console.log(data);
-
   return data.list
     .map((entry) => {
       const date = new Date(entry.dt * 1000).toLocaleDateString();
       const temp = entry.main.temp;
       const weather = entry.weather[0].description;
-      return `📅 ${date}: 🌡️ ${temp}°C, ${weather}\n`;
+      return `📅 ${date}: ${temp}°C, ${weather}\n`;
     })
     .join("\n");
 }
-
-// message
-// client.on("messageCreate", (message) => {
-//   if (message.author.bot) {
-//     return;
-//   }
-//   message.reply({
-//     content: "Weather is too cold!",
-//   });
-// });
 
 // command reply
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  if (interaction.commandName === "ping") {
-    await interaction.reply("Pong!");
+  if (interaction.commandName === "funfact") {
+    const randomFact = funFacts[Math.floor(Math.random() * funFacts.length)];
+
+    const embed = new EmbedBuilder()
+      .setColor(0x1abc9c)
+      .setTitle("🌤️ Fun Weather Fact!")
+      .setDescription(randomFact) 
+      .setFooter({ text: "Stay curious!" }) 
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed] });
   }
+
+  if (interaction.commandName === "weather") {
+    const city = interaction.options.getString("city");
+
+    try {
+      const weatherData = await getWeather(city);
+      await interaction.reply(weatherData);
+    } catch (error) {
+      await interaction.reply(
+        `Couldn't retrieve the weather for ${city}. Please try another city! 🌥️`
+      );
+    }
+  }
+
   if (interaction.commandName === "forecast") {
     const city = interaction.options.getString("city");
 
