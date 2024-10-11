@@ -11,7 +11,7 @@ const client = new Client({
   ],
 });
 
-const prefix = "!"; 
+const prefix = "!";
 
 client.on("messageCreate", async (message) => {
   if (!message.content.startsWith(prefix) || message.author.bot) return;
@@ -40,8 +40,7 @@ client.on("messageCreate", async (message) => {
 
 async function getWeather(city) {
   try {
-    const apiKey = process.env.WEATHER_API_KEY;
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.API_KEY}&units=metric`;
     const response = await axios.get(url);
     const data = response.data;
 
@@ -82,6 +81,30 @@ function getWeatherMessage(temp) {
   }
 }
 
+// Function to fetch 3-day forecast data
+async function getForecastByCity(city) {
+  const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&cnt=3&units=metric&appid=${process.env.API_KEY}`;
+  const response = await fetch(url);
+  const data = await response.json();
+
+  console.log(city);
+
+  if (data.cod === "404") {
+    throw new Error("City not found");
+  }
+
+  console.log(data);
+
+  return data.list
+    .map((entry) => {
+      const date = new Date(entry.dt * 1000).toLocaleDateString();
+      const temp = entry.main.temp;
+      const weather = entry.weather[0].description;
+      return `📅 ${date}: 🌡️ ${temp}°C, ${weather}\n`;
+    })
+    .join("\n");
+}
+
 // message
 // client.on("messageCreate", (message) => {
 //   if (message.author.bot) {
@@ -98,6 +121,20 @@ client.on("interactionCreate", async (interaction) => {
 
   if (interaction.commandName === "ping") {
     await interaction.reply("Pong!");
+  }
+  if (interaction.commandName === "forecast") {
+    const city = interaction.options.getString("city");
+
+    try {
+      const forecastData = await getForecastByCity(city);
+      await interaction.reply(
+        `**Here's the 3-day forecast 🌥️ for __${city.toUpperCase()}__:**\n\`\`\`\n${forecastData}\n\`\`\``
+      );
+    } catch (error) {
+      await interaction.reply(
+        `Couldn't retrieve the weather for ${city}. Please try another city! 🌥️`
+      );
+    }
   }
 });
 
